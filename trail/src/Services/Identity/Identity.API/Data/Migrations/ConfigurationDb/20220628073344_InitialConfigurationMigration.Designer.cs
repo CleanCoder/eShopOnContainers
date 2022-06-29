@@ -10,8 +10,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ID.eShop.Services.Identity.API.Data.Migrations.ConfigurationDb
 {
     [DbContext(typeof(ConfigurationDbContext))]
-    [Migration("20220627072853_InitialConfigurationDbMigration")]
-    partial class InitialConfigurationDbMigration
+    [Migration("20220628073344_InitialConfigurationMigration")]
+    partial class InitialConfigurationMigration
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {

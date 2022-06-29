@@ -11,6 +11,8 @@ namespace ID.eShop.Services.Identity.API.Data
         {
         }
 
+        public DbSet<UserVerificationCode> VerificationCodes { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
@@ -26,6 +28,9 @@ namespace ID.eShop.Services.Identity.API.Data
             builder.Entity<IdentityRoleClaim<string>>().ToTable("RoleClaims");
             builder.Entity<IdentityUserClaim<string>>().ToTable("UserClaims");
             builder.Entity<IdentityUserLogin<string>>().ToTable("UserLogins");
+
+
+            builder.Entity<UserVerificationCode>().HasIndex(entity => entity.UserId).HasName("IX_VerificationCode_UserId");
         }
     }
 }

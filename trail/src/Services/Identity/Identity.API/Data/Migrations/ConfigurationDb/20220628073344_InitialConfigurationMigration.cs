@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace ID.eShop.Services.Identity.API.Data.Migrations.ConfigurationDb
 {
-    public partial class InitialConfigurationDbMigration : Migration
+    public partial class InitialConfigurationMigration : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {

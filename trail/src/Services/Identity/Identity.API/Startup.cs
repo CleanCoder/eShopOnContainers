@@ -1,15 +1,18 @@
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using HealthChecks.UI.Client;
+using ID.eShop.API.Common.Services;
+using ID.eShop.Services.Identity.API.Certificates;
+using ID.eShop.Services.Identity.API.CustomTokenProviders;
 using ID.eShop.Services.Identity.API.Data;
 using ID.eShop.Services.Identity.API.Models;
 using ID.eShop.Services.Identity.API.Services;
-using ID.eShop.Services.Identity.API.Certificates;
+using IdentityServer4.Configuration;
 using IdentityServer4.Services;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -19,7 +22,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Reflection;
-using Microsoft.AspNetCore.Http;
 
 namespace ID.eShop.Services.Identity.API
 {
@@ -47,12 +49,24 @@ namespace ID.eShop.Services.Identity.API
                         sqlOptions.EnableRetryOnFailure(maxRetryCount: 15, maxRetryDelay: TimeSpan.FromSeconds(30), errorNumbersToAdd: null);
                     }));
 
-            services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+            services.AddIdentity<ApplicationUser, IdentityRole>(opt =>
             {
-                options.SignIn.RequireConfirmedEmail = false;
+                opt.Password.RequiredLength = 6;
+                opt.Password.RequireDigit = true;
+                opt.Password.RequireUppercase = true;
+                opt.Password.RequireLowercase = true;
+                opt.Password.RequireNonAlphanumeric = false;
+
+                opt.User.RequireUniqueEmail = true;
+                opt.SignIn.RequireConfirmedEmail = true;
+
+                opt.Tokens.EmailConfirmationTokenProvider = "emailconfirmation";
             })
                 .AddEntityFrameworkStores<ApplicationDbContext>()
-                .AddDefaultTokenProviders();
+                .AddDefaultTokenProviders()
+                .AddTokenProvider<EmailConfirmationTokenProvider<ApplicationUser>>("emailconfirmation");
+
+            services.Configure<DataProtectionTokenProviderOptions>(opt => opt.TokenLifespan = TimeSpan.FromHours(2));
 
             services.Configure<AppSettings>(Configuration);
             // TODO: Redis for data protection key
@@ -75,16 +89,28 @@ namespace ID.eShop.Services.Identity.API
             var migrationsAssembly = typeof(Startup).GetTypeInfo().Assembly.GetName().Name;
 
             // Adds IdentityServer
-            services.AddIdentityServer(x =>
+            services.AddIdentityServer(options =>
             {
-                x.IssuerUri = "null";
-                x.Authentication.CookieLifetime = TimeSpan.FromHours(2);
+                options.IssuerUri = "null";
+
+                options.Events.RaiseErrorEvents = true;
+                options.Events.RaiseInformationEvents = true;
+                options.Events.RaiseFailureEvents = true;
+                options.Events.RaiseSuccessEvents = true;
+                options.UserInteraction.LoginUrl = "/Account/Login";
+                options.UserInteraction.LogoutUrl = "/Account/Logout";
+                options.Authentication = new AuthenticationOptions()
+                {
+                    CookieLifetime = TimeSpan.FromHours(24), // ID server cookie timeout set to 10 hours
+                    CookieSlidingExpiration = true
+                };
             })
             //.AddDevspacesIfNeeded(Configuration.GetValue("EnableDevspaces", false)) // TODO: Devspaces
             .AddSigningCredential(Certificate.Get())
             .AddAspNetIdentity<ApplicationUser>()
             .AddConfigurationStore(options =>
             {
+                //options.DefaultSchema = "idp";
                 options.ConfigureDbContext = builder => builder.UseSqlServer(connectionString,
                     sqlServerOptionsAction: sqlOptions =>
                     {
@@ -95,6 +121,8 @@ namespace ID.eShop.Services.Identity.API
             })
             .AddOperationalStore(options =>
             {
+                //options.DefaultSchema = "idp";
+                //options.EnableTokenCleanup = true;
                 options.ConfigureDbContext = builder => builder.UseSqlServer(connectionString,
                     sqlServerOptionsAction: sqlOptions =>
                     {
@@ -109,6 +137,11 @@ namespace ID.eShop.Services.Identity.API
             services.AddControllers();
             services.AddControllersWithViews();
             services.AddRazorPages();
+
+            // Register Common Services
+            services.AddSingleton(Configuration.GetSection("EmailConfiguration").Get<EmailConfiguration>());
+            services.AddScoped<IEmailSender, DummyEmailSender>();  // TODO: Test only
+            services.AddScoped<IVerificationCodeService, VerificationCodeService>();
 
             var container = new ContainerBuilder();
             container.Populate(services);

@@ -48,4 +48,8 @@
     <Folder Include="Views\Shared\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Common\API.Common\API.Common.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
+using ID.eShop.API.Common.Services;
 using ID.eShop.Services.Identity.API.Models;
 using ID.eShop.Services.Identity.API.Services;
 using IdentityModel;
@@ -27,15 +28,15 @@ namespace ID.eShop.Services.Identity.API.Controllers
         private readonly ILogger<AccountController> _logger;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IConfiguration _configuration;
+        private readonly IEmailSender _emailSender;
 
         public AccountController(
-
-            //InMemoryUserLoginService loginService,
             ILoginService<ApplicationUser> loginService,
             IIdentityServerInteractionService interaction,
             IClientStore clientStore,
             ILogger<AccountController> logger,
             UserManager<ApplicationUser> userManager,
+            IEmailSender emailSender,
             IConfiguration configuration)
         {
             _loginService = loginService;
@@ -43,6 +44,7 @@ namespace ID.eShop.Services.Identity.API.Controllers
             _clientStore = clientStore;
             _logger = logger;
             _userManager = userManager;
+            _emailSender = emailSender;
             _configuration = configuration;
         }
 
@@ -78,24 +80,13 @@ namespace ID.eShop.Services.Identity.API.Controllers
 
                 if (await _loginService.ValidateCredentials(user, model.Password))
                 {
-                    var tokenLifetime = _configuration.GetValue("TokenLifetimeMinutes", 120);
-
-                    var props = new AuthenticationProperties
+                    if (!await _userManager.IsEmailConfirmedAsync(user))
                     {
-                        ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(tokenLifetime),
-                        AllowRefresh = true,
-                        RedirectUri = model.ReturnUrl
-                    };
+                        await SendEmailConfirmation(user);
+                        return RedirectToAction("confirmEmail", "account", new { returnUrl = model.ReturnUrl, email = model.Email });
+                    }
 
-                    if (model.RememberMe)
-                    {
-                        var permanentTokenLifetime = _configuration.GetValue("PermanentTokenLifetimeDays", 365);
-
-                        props.ExpiresUtc = DateTimeOffset.UtcNow.AddDays(permanentTokenLifetime);
-                        props.IsPersistent = true;
-                    };
-
-                    await _loginService.SignInAsync(user, props);
+                    await SignIn(model.ReturnUrl, model.RememberMe, user);
 
                     // make sure the returnUrl is still valid, and if yes - redirect back to authorize endpoint
                     if (_interaction.IsValidReturnUrl(model.ReturnUrl))
@@ -169,7 +160,6 @@ namespace ID.eShop.Services.Identity.API.Controllers
 
                 try
                 {
-
                     // hack: try/catch to handle social providers that throw
                     await HttpContext.SignOutAsync(idp, new AuthenticationProperties
                     {
@@ -240,6 +230,10 @@ namespace ID.eShop.Services.Identity.API.Controllers
                     // If we got this far, something failed, redisplay form
                     return View(model);
                 }
+
+                await SendEmailConfirmation(user);
+
+                return RedirectToAction("ConfirmEmail", "account", new { returnUrl = returnUrl, email = user.Email });
             }
 
             if (returnUrl != null)
@@ -260,6 +254,56 @@ namespace ID.eShop.Services.Identity.API.Controllers
         public IActionResult Redirecting()
         {
             return View();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ConfirmEmail(string returnUrl, string email)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
+                return View("Error");
+
+            ViewData["ReturnUrl"] = returnUrl;
+            return View(new ConfirmEmailViewModel { Email = email, ReturnUrl = returnUrl });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ConfirmEmail(ConfirmEmailViewModel confirmEmailViewModel)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(confirmEmailViewModel);
+            }
+
+            var user = await _userManager.FindByEmailAsync(confirmEmailViewModel.Email);
+            if (user != null)
+            {
+                var result = await _userManager.ConfirmEmailAsync(user, confirmEmailViewModel.Token);
+                if (result.Succeeded)
+                {
+                    if (HttpContext.User.Identity.IsAuthenticated)
+                    {
+                        if (_interaction.IsValidReturnUrl(confirmEmailViewModel.ReturnUrl))
+                        {
+                            return Redirect(confirmEmailViewModel.ReturnUrl);
+                        }
+                    }
+                    else
+                    {
+                        await SignIn(confirmEmailViewModel.ReturnUrl, false, user);
+
+                        // make sure the returnUrl is still valid, and if yes - redirect back to authorize endpoint
+                        if (_interaction.IsValidReturnUrl(confirmEmailViewModel.ReturnUrl))
+                        {
+                            return Redirect(confirmEmailViewModel.ReturnUrl);
+                        }
+                    }
+
+                    return RedirectToAction("index", "home");
+                }
+            }
+
+            return View(confirmEmailViewModel);
         }
 
         #region [ Implement Details... ]
@@ -289,6 +333,36 @@ namespace ID.eShop.Services.Identity.API.Controllers
             vm.Email = model.Email;
             vm.RememberMe = model.RememberMe;
             return vm;
+        }
+
+        private async Task SignIn(string returnUrl, bool rememberMe, ApplicationUser user)
+        {
+            var tokenLifetime = _configuration.GetValue("TokenLifetimeMinutes", 120);
+
+            var props = new AuthenticationProperties
+            {
+                ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(tokenLifetime),
+                AllowRefresh = true,
+                RedirectUri = returnUrl
+            };
+
+            if (rememberMe)
+            {
+                var permanentTokenLifetime = _configuration.GetValue("PermanentTokenLifetimeDays", 365);
+
+                props.ExpiresUtc = DateTimeOffset.UtcNow.AddDays(permanentTokenLifetime);
+                props.IsPersistent = true;
+            };
+
+            await _loginService.SignInAsync(user, props);
+        }
+
+        private async Task SendEmailConfirmation(ApplicationUser user)
+        {
+            var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+            //var confirmationLink = Url.Action(nameof(ConfirmEmail), "Account", new { token, email = user.Email }, Request.Scheme);
+            var message = new Message(new string[] { user.Email }, "Confirmation email token", token, null);
+            await _emailSender.SendEmailAsync(message);
         }
 
         private void AddErrors(IdentityResult result)

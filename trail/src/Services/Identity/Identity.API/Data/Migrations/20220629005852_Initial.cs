@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace ID.eShop.Services.Identity.API.Data.Migrations
 {
-    public partial class InitialMigration : Migration
+    public partial class Initial : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -51,6 +51,25 @@ namespace ID.eShop.Services.Identity.API.Data.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Users", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "VerificationCodes",
+                schema: "account",
+                columns: table => new
+                {
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<string>(nullable: false),
+                    Nonce = table.Column<string>(nullable: true),
+                    SecurityStamp = table.Column<string>(maxLength: 100, nullable: true),
+                    TriesLeft = table.Column<int>(nullable: false),
+                    ExpBefore = table.Column<DateTimeOffset>(nullable: true),
+                    Purpose = table.Column<string>(maxLength: 50, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_VerificationCodes", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -215,6 +234,12 @@ namespace ID.eShop.Services.Identity.API.Data.Migrations
                 column: "NormalizedUserName",
                 unique: true,
                 filter: "[NormalizedUserName] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_VerificationCode_UserId",
+                schema: "account",
+                table: "VerificationCodes",
+                column: "UserId");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
@@ -237,6 +262,10 @@ namespace ID.eShop.Services.Identity.API.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "UserTokens",
+                schema: "account");
+
+            migrationBuilder.DropTable(
+                name: "VerificationCodes",
                 schema: "account");
 
             migrationBuilder.DropTable(

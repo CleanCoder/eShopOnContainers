@@ -7,16 +7,27 @@ EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:3.1 AS build
 WORKDIR /src
-COPY ["Services/Identity/Identity.API/Identity.API/Identity.API.csproj", "Services/Identity/Identity.API/Identity.API/"]
-RUN dotnet restore "Services/Identity/Identity.API/Identity.API/Identity.API.csproj"
+
+COPY "eShop.sln" "eShop.sln"
+
+COPY "Common/API.Common/API.Common.csproj" "Common/API.Common/API.Common.csproj"
+COPY ["Services/Identity/Identity.API/Identity.API.csproj", "Services/Identity/Identity.API/"]
+#RUN dotnet restore "Services/Identity/Identity.API/Identity.API.csproj"
+#COPY . .
+#WORKDIR "/Services/Identity/Identity.API"
+#RUN dotnet build "Identity.API.csproj" -c Release -o /app/build
+
+COPY "NuGet.config" "NuGet.config"
+RUN dotnet restore "eShop.sln"
+
 COPY . .
-WORKDIR "/src/Services/Identity/Identity.API/Identity.API"
+WORKDIR /src/Services/Identity/Identity.API
 RUN dotnet build "Identity.API.csproj" -c Release -o /app/build
+RUN dotnet publish --no-restore -c Release -o /app
 
 FROM build AS publish
-RUN dotnet publish "Identity.API.csproj" -c Release -o /app/publish
 
 FROM base AS final
 WORKDIR /app
-COPY --from=publish /app/publish .
+COPY --from=publish /app .
 ENTRYPOINT ["dotnet", "Identity.API.dll"]

@@ -35,6 +35,13 @@ spec:
         image: mcr.microsoft.com/mssql/server:2019-latest
         ports:
         - containerPort: 1433
+        resources:
+          limits:
+            cpu: '1'
+            memory: 4Gi
+          requests:
+            cpu: 500m
+            memory: 512Mi
         env:
         - name: ACCEPT_EULA
           value: "Y"

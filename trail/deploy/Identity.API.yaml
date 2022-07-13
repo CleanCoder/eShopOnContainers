@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: identity-api
+  namespace: eshop
   labels:
     app: identity-api
 spec:
@@ -27,6 +28,26 @@ spec:
           limits:
             cpu: 200m
             memory: 200Mi
+        livenessProbe:
+            httpGet:
+              path: /liveness
+              port: 80
+              scheme: HTTP
+            initialDelaySeconds: 90
+            timeoutSeconds: 15
+            periodSeconds: 15
+            successThreshold: 1
+            failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /hc
+            port: 80
+            scheme: HTTP
+          initialDelaySeconds: 90
+          timeoutSeconds: 15
+          periodSeconds: 10
+          successThreshold: 1
+          failureThreshold: 3
 
 ---
 
@@ -34,6 +55,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: identity-api
+  namespace: eshop
 spec:
  type: LoadBalancer
  ports:
@@ -42,18 +64,3 @@ spec:
    app: identity-api
 
 ---
-
-# apiVersion: networking.k8s.io/v1beta1
-# kind: Ingress
-# metadata:
-#   name: identity-api-ingress
-#   labels:
-#     app: identity-api-ingress
-# spec:
-#   rules:
-#   - http:
-#       paths:
-#       - path: /
-#         backend:
-#           serviceName: identity-api-service
-#           servicePort: 80

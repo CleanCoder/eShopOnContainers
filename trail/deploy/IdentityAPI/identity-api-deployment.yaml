@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: identity-api
-        image: al/identity-api:0.0.3
+        image: al/identity-api:0.0.8
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 80
@@ -48,6 +48,19 @@ spec:
           periodSeconds: 10
           successThreshold: 1
           failureThreshold: 3
+        envFrom:
+        - configMapRef:
+            name: identity-api
+        - secretRef:
+            name: identity-api
+        
+        volumeMounts: 
+        - name: file-store
+          mountPath: /app/wwwroot/file-storage
+      volumes:
+      - name: file-store
+        persistentVolumeClaim:
+          claimName: file-store-claim
 
 ---
 

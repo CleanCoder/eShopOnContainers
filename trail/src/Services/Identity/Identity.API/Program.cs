@@ -81,9 +81,12 @@ namespace ID.eShop.Services.Identity.API
 
         private static IConfiguration GetConfiguration()
         {
+            var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+            System.Diagnostics.Trace.WriteLine(env);        
             var builder = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                 .AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: true)
                 .AddEnvironmentVariables();
 
             return builder.Build();

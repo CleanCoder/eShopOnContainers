@@ -44,11 +44,15 @@ Refer to ./SQLServer Commands
 - Deploy the service
     ```
     kubectl get pods --all-namespaces -- PreCheck DB services
-    kubectl apply -f Identity.API.yaml
+    kubectl apply -f ./IdentityAPI/file-store-pv-claim.yaml
+    kubectl apply -f ./IdentityAPI/identity-api-config-map.yaml
+    kubectl apply -f ./IdentityAPI/identity-api-secret-test.yaml
+
+    kubectl apply -f ./IdentityAPI/identity-api-deployment.yaml
     ```
 - Apply the ingress
     ```
-    kubectl apply -f Identity.Ingress.yaml
+    kubectl apply -f ./IdentityAPI/identity-ingress.yaml
     ```
 - Browser http://account.eshop.local:8080/ 
 (*Note: ensure the domain add to local hosts file*)

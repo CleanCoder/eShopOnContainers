@@ -11,6 +11,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Certificates\idsrv.pfx" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Certificates\idsrv.pfx" />
     <EmbeddedResource Include="Certificates\idsrv3test.pfx" />
   </ItemGroup>
 

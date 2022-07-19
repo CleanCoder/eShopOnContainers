@@ -1,0 +1,14 @@
+version: '3.4'
+
+services:
+  identity.api:
+    image: ${DOCKER_REGISTRY-}identityapi
+    build:
+      context: .
+      dockerfile: Services/Identity/Identity.API/Dockerfile
+
+  biz.api:
+    image: ${DOCKER_REGISTRY-}bizapi
+    build:
+      context: .
+      dockerfile: Services/Biz.API/Dockerfile

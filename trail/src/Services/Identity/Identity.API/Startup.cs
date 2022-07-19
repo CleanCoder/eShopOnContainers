@@ -1,8 +1,11 @@
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using HealthChecks.UI.Client;
+using ID.eShop.API.Common;
+using ID.eShop.API.Common.Extensions;
 using ID.eShop.API.Common.Services;
 using ID.eShop.Services.Identity.API.Certificates;
+using ID.eShop.Services.Identity.API.Clients;
 using ID.eShop.Services.Identity.API.CustomTokenProviders;
 using ID.eShop.Services.Identity.API.Data;
 using ID.eShop.Services.Identity.API.Models;
@@ -144,6 +147,11 @@ namespace ID.eShop.Services.Identity.API
             services.AddSingleton(Configuration.GetSection("EmailConfiguration").Get<EmailConfiguration>());
             services.AddScoped<IEmailSender, DummyEmailSender>();  // TODO: Test only
             services.AddScoped<IVerificationCodeService, VerificationCodeService>();
+
+
+            // HTTP Clients
+            services.AddCustomHttpClient<IWeatherClient, WeatherClient>(Configuration.GetSectionAs<HttpClientSettings>("HttpClientSettings:BizApi"));
+
 
             var container = new ContainerBuilder();
             container.Populate(services);

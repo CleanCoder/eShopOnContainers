@@ -27,7 +27,7 @@ namespace ID.eShop.Services.Identity.API.Clients
 
         public async Task<WeatherForecast[]> GetWeatherAsync()
         {
-            var responseMessage = await this.client.GetAsync("/weatherforecast");
+            var responseMessage = await this.client.GetAsync("/api/biz/weatherforecast");
             var stream = await responseMessage.Content.ReadAsStreamAsync();
             return await JsonSerializer.DeserializeAsync<WeatherForecast[]>(stream, options);
         }

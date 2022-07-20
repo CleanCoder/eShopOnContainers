@@ -63,7 +63,18 @@ spec:
           {{- end }}
           {{- end }} 
           {{- end }}
-
+          {{- if .Values.deployment.http.container_port }}
+          - containerPort: {{ .Values.deployment.http.container_port }}
+          {{- end }}
+          env:
+            - name: k8sname
+              value: {{ .Values.clusterName }}
+          {{- if .Values.deployment.env }} 
+          {{- range .Values.deployment.env }}
+          - name: {{.name}}
+            value: {{.value}}
+          {{- end }} 
+          {{- end }}
           envFrom:
           {{- if .Values.configmap }}
           - configMapRef:
@@ -130,11 +141,11 @@ spec:
           terminationMessagePolicy: File
           {{- if .Values.deployment.volume }}
           volumeMounts:
-          - mountPath: {{ .Values.deployment.volume.mount_path }}
-            name: {{ .Values.app_name }}
+          - name: {{ .Values.app_name }}
+            mountPath: {{ .Values.deployment.volume.mount_path }}
         volumes:
         - name: {{ .Values.app_name }}
-          secret:
-            secretName: {{ .Values.app_name }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.app_name }}
         {{- end }}
 {{- end }}

@@ -43,16 +43,27 @@ namespace ID.eShop.Services.Identity.API
 
         public IServiceProvider ConfigureServices(IServiceCollection services)
         {
+            services.Configure<AppSettings>(Configuration);
+
+            bool useInmemoryDB = Configuration.GetValue<bool>("UseInMemoryDB");
+
             // Add framework services.
             var connectionString = Configuration.GetConnectionString("IdentityServerDatabase");
-            services.AddDbContext<ApplicationDbContext>(options =>
-                    options.UseSqlServer(connectionString,
-                    sqlServerOptionsAction: sqlOptions =>
-                    {
-                        sqlOptions.MigrationsAssembly(typeof(Startup).GetTypeInfo().Assembly.GetName().Name);
+            if (!useInmemoryDB)
+            {
+                services.AddDbContext<ApplicationDbContext>(options =>
+                        options.UseSqlServer(connectionString,
+                        sqlServerOptionsAction: sqlOptions =>
+                        {
+                            sqlOptions.MigrationsAssembly(typeof(Startup).GetTypeInfo().Assembly.GetName().Name);
                         //Configuring Connection Resiliency: https://docs.microsoft.com/en-us/ef/core/miscellaneous/connection-resiliency 
                         sqlOptions.EnableRetryOnFailure(maxRetryCount: 15, maxRetryDelay: TimeSpan.FromSeconds(30), errorNumbersToAdd: null);
-                    }));
+                        }));
+            }
+            else
+            {
+                services.AddDbContext<ApplicationDbContext>(options => options.UseInMemoryDatabase("eshop"));
+            }
 
             services.AddIdentity<ApplicationUser, IdentityRole>(opt =>
             {
@@ -73,7 +84,7 @@ namespace ID.eShop.Services.Identity.API
 
             services.Configure<DataProtectionTokenProviderOptions>(opt => opt.TokenLifespan = TimeSpan.FromHours(2));
 
-            services.Configure<AppSettings>(Configuration);
+         
             // TODO: Redis for data protection key
             //if (Configuration.GetValue<string>("IsClusterEnv") == bool.TrueString)
             //{
@@ -116,25 +127,39 @@ namespace ID.eShop.Services.Identity.API
             .AddConfigurationStore(options =>
             {
                 //options.DefaultSchema = "idp";
-                options.ConfigureDbContext = builder => builder.UseSqlServer(connectionString,
-                    sqlServerOptionsAction: sqlOptions =>
-                    {
-                        sqlOptions.MigrationsAssembly(migrationsAssembly);
+                if (!useInmemoryDB)
+                {
+                    options.ConfigureDbContext = builder => builder.UseSqlServer(connectionString,
+                        sqlServerOptionsAction: sqlOptions =>
+                        {
+                            sqlOptions.MigrationsAssembly(migrationsAssembly);
                         //Configuring Connection Resiliency: https://docs.microsoft.com/en-us/ef/core/miscellaneous/connection-resiliency 
                         sqlOptions.EnableRetryOnFailure(maxRetryCount: 15, maxRetryDelay: TimeSpan.FromSeconds(30), errorNumbersToAdd: null);
-                    });
+                        });
+                }
+                else
+                {
+                    options.ConfigureDbContext = builder => builder.UseInMemoryDatabase("idp");
+                }
             })
             .AddOperationalStore(options =>
             {
-                //options.DefaultSchema = "idp";
-                //options.EnableTokenCleanup = true;
-                options.ConfigureDbContext = builder => builder.UseSqlServer(connectionString,
-                    sqlServerOptionsAction: sqlOptions =>
-                    {
-                        sqlOptions.MigrationsAssembly(migrationsAssembly);
-                        //Configuring Connection Resiliency: https://docs.microsoft.com/en-us/ef/core/miscellaneous/connection-resiliency 
-                        sqlOptions.EnableRetryOnFailure(maxRetryCount: 15, maxRetryDelay: TimeSpan.FromSeconds(30), errorNumbersToAdd: null);
-                    });
+                if (!useInmemoryDB)
+                {
+                    //options.DefaultSchema = "idp";
+                    //options.EnableTokenCleanup = true;
+                    options.ConfigureDbContext = builder => builder.UseSqlServer(connectionString,
+                        sqlServerOptionsAction: sqlOptions =>
+                        {
+                            sqlOptions.MigrationsAssembly(migrationsAssembly);
+                            //Configuring Connection Resiliency: https://docs.microsoft.com/en-us/ef/core/miscellaneous/connection-resiliency 
+                            sqlOptions.EnableRetryOnFailure(maxRetryCount: 15, maxRetryDelay: TimeSpan.FromSeconds(30), errorNumbersToAdd: null);
+                        });
+                }
+                else
+                {
+                    options.ConfigureDbContext = builder => builder.UseInMemoryDatabase("idp");
+                }
             })
             .Services.AddTransient<IProfileService, ProfileService>();
 

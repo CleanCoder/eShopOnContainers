@@ -1,7 +1,7 @@
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
-  name: file-store-claim
+  name: identity-api
   namespace: eshop
 spec:
   accessModes:

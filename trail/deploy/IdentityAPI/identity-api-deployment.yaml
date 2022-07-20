@@ -55,12 +55,12 @@ spec:
             name: identity-api
         
         volumeMounts: 
-        - name: file-store
+        - name: identity-api
           mountPath: /app/wwwroot/file-storage
       volumes:
-      - name: file-store
+      - name: identity-api
         persistentVolumeClaim:
-          claimName: file-store-claim
+          claimName: identity-api
 
 ---
 

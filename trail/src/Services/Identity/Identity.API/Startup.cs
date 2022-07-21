@@ -84,7 +84,7 @@ namespace ID.eShop.Services.Identity.API
 
             services.Configure<DataProtectionTokenProviderOptions>(opt => opt.TokenLifespan = TimeSpan.FromHours(2));
 
-         
+
             // TODO: Redis for data protection key
             //if (Configuration.GetValue<string>("IsClusterEnv") == bool.TrueString)
             //{
@@ -95,9 +95,11 @@ namespace ID.eShop.Services.Identity.API
             //    .PersistKeysToStackExchangeRedis(ConnectionMultiplexer.Connect(Configuration["DPConnectionString"]), "DataProtection-Keys");
             //}
 
-            services.AddHealthChecks()
-                .AddCheck("self", () => HealthCheckResult.Healthy())
-                .AddSqlServer(connectionString, name: "IdentityDB-check", tags: new string[] { "IdentityDB" });
+            var healthCheckBuilder = services.AddHealthChecks().AddCheck("self", () => HealthCheckResult.Healthy());
+            if (!useInmemoryDB)
+            {
+                healthCheckBuilder.AddSqlServer(connectionString, name: "IdentityDB-check", tags: new string[] { "IdentityDB" });
+            }
 
             services.AddTransient<ILoginService<ApplicationUser>, EFLoginService>();
             services.AddTransient<IRedirectService, RedirectService>();
@@ -204,11 +206,12 @@ namespace ID.eShop.Services.Identity.API
                 app.UsePathBase(pathBase);
             }
 
-            app.UseStaticFiles(new StaticFileOptions
-            {
-                FileProvider = new PhysicalFileProvider(Path.Combine(env.WebRootPath, "file-storage")),
-                RequestPath = "/file-storage"
-            });
+            app.UseStaticFiles();
+            //app.UseStaticFiles(new StaticFileOptions
+            //{
+            //    FileProvider = new PhysicalFileProvider(Path.Combine(env.WebRootPath, "file-storage")),
+            //    RequestPath = "/file-storage"
+            //});
 
             // Make work identity server redirections in Edge and lastest versions of browers. WARN: Not valid in a production environment.
             app.Use(async (context, next) =>

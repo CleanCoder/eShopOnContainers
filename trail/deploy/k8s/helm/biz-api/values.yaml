@@ -1,6 +1,6 @@
 app_name: biz-api
 namespace: eshop
-umbrella: users
+umbrella: eshop
 clusterName: eshop-k8s
 
 image:
@@ -14,16 +14,16 @@ service:
 
 ingress:
   enabled: true
-  className: ""
+  className: nginx
   annotations:
     kubernetes.io/ingress.class: "nginx"
     # TODO:
-    cert-manager.io/cluster-issuer: "letsencrypt-test"
+    # cert-manager.io/cluster-issuer: "letsencrypt-test"
     # kubernetes.io/tls-acme: "true"
   hosts:
     - host: '*.eshop.local'
       paths:
-        - path: /
+        - path: /api/biz
           pathType: Prefix
   tls: []
   #  - secretName: chart-example-tls
@@ -40,6 +40,9 @@ deployment:
     requests:
       cpu: 100m
       memory: 128Mi
+  http:
+    port: 80
+    container_port: 80
   liveness:
     path: /liveness
     failure_threshold: 3
@@ -56,16 +59,3 @@ deployment:
     period_seconds: 60
     success_threshold: 1
     timeout_seconds: 15
-
-probes:
-  liveness:
-    path: /liveness
-    initialDelaySeconds: 10
-    periodSeconds: 15
-    port: 80
-  readiness:
-    path: /hc
-    timeoutSeconds: 5
-    initialDelaySeconds: 90
-    periodSeconds: 60
-    port: 80

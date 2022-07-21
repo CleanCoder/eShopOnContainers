@@ -14,6 +14,7 @@ service:
 
 ingress:
   enabled: true
+  className: nginx
   annotations:
     kubernetes.io/ingress.class: "nginx"
     # TODO:
@@ -39,7 +40,9 @@ hpa:
   - type: Resource
     resource:
       name: cpu
-      targetAverageUtilization: 75
+      target:
+        type: Utilization
+        averageUtilization: 75
 
 deployment:
   progress_deadline_seconds: 600
@@ -70,11 +73,10 @@ deployment:
     period_seconds: 60
     success_threshold: 1
     timeout_seconds: 15
-  volume:
-    mount_path: "/app/wwwroot/file-storage"
+  # volume:
+  #   mount_path: "/app/wwwroot/file-storage"
 
 secret:
-  create: true
   data:
     app-secret: "you don't know"
 

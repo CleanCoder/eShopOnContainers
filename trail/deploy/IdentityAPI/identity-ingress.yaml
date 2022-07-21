@@ -6,7 +6,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-  - host: account.eshop.local
+  - host: '*.eshop.local'
     http:
       paths:
       - path: /

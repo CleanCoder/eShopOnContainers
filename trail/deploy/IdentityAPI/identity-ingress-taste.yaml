@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: identity-api-ingress
+  namespace: eshop
+  annotations: 
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-test"
+spec:
+  tls:
+    - hosts:
+      - sisyphus996.cn
+      secretName: letsencrypt-test
+  rules:
+  - host: '*.sisyphus996.cn'
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: identity-api
+            port:
+              number: 80

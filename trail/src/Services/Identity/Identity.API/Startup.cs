@@ -1,8 +1,11 @@
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using HealthChecks.UI.Client;
+using ID.eShop.API.Common;
+using ID.eShop.API.Common.Extensions;
 using ID.eShop.API.Common.Services;
 using ID.eShop.Services.Identity.API.Certificates;
+using ID.eShop.Services.Identity.API.Clients;
 using ID.eShop.Services.Identity.API.CustomTokenProviders;
 using ID.eShop.Services.Identity.API.Data;
 using ID.eShop.Services.Identity.API.Models;
@@ -18,9 +21,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
+using System.IO;
 using System.Reflection;
 
 namespace ID.eShop.Services.Identity.API
@@ -38,16 +43,27 @@ namespace ID.eShop.Services.Identity.API
 
         public IServiceProvider ConfigureServices(IServiceCollection services)
         {
+            services.Configure<AppSettings>(Configuration);
+
+            bool useInmemoryDB = Configuration.GetValue<bool>("UseInMemoryDB");
+
             // Add framework services.
             var connectionString = Configuration.GetConnectionString("IdentityServerDatabase");
-            services.AddDbContext<ApplicationDbContext>(options =>
-                    options.UseSqlServer(connectionString,
-                    sqlServerOptionsAction: sqlOptions =>
-                    {
-                        sqlOptions.MigrationsAssembly(typeof(Startup).GetTypeInfo().Assembly.GetName().Name);
+            if (!useInmemoryDB)
+            {
+                services.AddDbContext<ApplicationDbContext>(options =>
+                        options.UseSqlServer(connectionString,
+                        sqlServerOptionsAction: sqlOptions =>
+                        {
+                            sqlOptions.MigrationsAssembly(typeof(Startup).GetTypeInfo().Assembly.GetName().Name);
                         //Configuring Connection Resiliency: https://docs.microsoft.com/en-us/ef/core/miscellaneous/connection-resiliency 
                         sqlOptions.EnableRetryOnFailure(maxRetryCount: 15, maxRetryDelay: TimeSpan.FromSeconds(30), errorNumbersToAdd: null);
-                    }));
+                        }));
+            }
+            else
+            {
+                services.AddDbContext<ApplicationDbContext>(options => options.UseInMemoryDatabase("eshop"));
+            }
 
             services.AddIdentity<ApplicationUser, IdentityRole>(opt =>
             {
@@ -68,7 +84,7 @@ namespace ID.eShop.Services.Identity.API
 
             services.Configure<DataProtectionTokenProviderOptions>(opt => opt.TokenLifespan = TimeSpan.FromHours(2));
 
-            services.Configure<AppSettings>(Configuration);
+
             // TODO: Redis for data protection key
             //if (Configuration.GetValue<string>("IsClusterEnv") == bool.TrueString)
             //{
@@ -79,9 +95,11 @@ namespace ID.eShop.Services.Identity.API
             //    .PersistKeysToStackExchangeRedis(ConnectionMultiplexer.Connect(Configuration["DPConnectionString"]), "DataProtection-Keys");
             //}
 
-            services.AddHealthChecks()
-                .AddCheck("self", () => HealthCheckResult.Healthy())
-                .AddSqlServer(connectionString, name: "IdentityDB-check", tags: new string[] { "IdentityDB" });
+            var healthCheckBuilder = services.AddHealthChecks().AddCheck("self", () => HealthCheckResult.Healthy());
+            if (!useInmemoryDB)
+            {
+                healthCheckBuilder.AddSqlServer(connectionString, name: "IdentityDB-check", tags: new string[] { "IdentityDB" });
+            }
 
             services.AddTransient<ILoginService<ApplicationUser>, EFLoginService>();
             services.AddTransient<IRedirectService, RedirectService>();
@@ -111,25 +129,39 @@ namespace ID.eShop.Services.Identity.API
             .AddConfigurationStore(options =>
             {
                 //options.DefaultSchema = "idp";
-                options.ConfigureDbContext = builder => builder.UseSqlServer(connectionString,
-                    sqlServerOptionsAction: sqlOptions =>
-                    {
-                        sqlOptions.MigrationsAssembly(migrationsAssembly);
+                if (!useInmemoryDB)
+                {
+                    options.ConfigureDbContext = builder => builder.UseSqlServer(connectionString,
+                        sqlServerOptionsAction: sqlOptions =>
+                        {
+                            sqlOptions.MigrationsAssembly(migrationsAssembly);
                         //Configuring Connection Resiliency: https://docs.microsoft.com/en-us/ef/core/miscellaneous/connection-resiliency 
                         sqlOptions.EnableRetryOnFailure(maxRetryCount: 15, maxRetryDelay: TimeSpan.FromSeconds(30), errorNumbersToAdd: null);
-                    });
+                        });
+                }
+                else
+                {
+                    options.ConfigureDbContext = builder => builder.UseInMemoryDatabase("idp");
+                }
             })
             .AddOperationalStore(options =>
             {
-                //options.DefaultSchema = "idp";
-                //options.EnableTokenCleanup = true;
-                options.ConfigureDbContext = builder => builder.UseSqlServer(connectionString,
-                    sqlServerOptionsAction: sqlOptions =>
-                    {
-                        sqlOptions.MigrationsAssembly(migrationsAssembly);
-                        //Configuring Connection Resiliency: https://docs.microsoft.com/en-us/ef/core/miscellaneous/connection-resiliency 
-                        sqlOptions.EnableRetryOnFailure(maxRetryCount: 15, maxRetryDelay: TimeSpan.FromSeconds(30), errorNumbersToAdd: null);
-                    });
+                if (!useInmemoryDB)
+                {
+                    //options.DefaultSchema = "idp";
+                    //options.EnableTokenCleanup = true;
+                    options.ConfigureDbContext = builder => builder.UseSqlServer(connectionString,
+                        sqlServerOptionsAction: sqlOptions =>
+                        {
+                            sqlOptions.MigrationsAssembly(migrationsAssembly);
+                            //Configuring Connection Resiliency: https://docs.microsoft.com/en-us/ef/core/miscellaneous/connection-resiliency 
+                            sqlOptions.EnableRetryOnFailure(maxRetryCount: 15, maxRetryDelay: TimeSpan.FromSeconds(30), errorNumbersToAdd: null);
+                        });
+                }
+                else
+                {
+                    options.ConfigureDbContext = builder => builder.UseInMemoryDatabase("idp");
+                }
             })
             .Services.AddTransient<IProfileService, ProfileService>();
 
@@ -143,6 +175,11 @@ namespace ID.eShop.Services.Identity.API
             services.AddScoped<IEmailSender, DummyEmailSender>();  // TODO: Test only
             services.AddScoped<IVerificationCodeService, VerificationCodeService>();
 
+
+            // HTTP Clients
+            services.AddCustomHttpClient<IWeatherClient, WeatherClient>(Configuration.GetSectionAs<HttpClientSettings>("HttpClientSettings:BizApi"));
+
+
             var container = new ContainerBuilder();
             container.Populate(services);
 
@@ -152,7 +189,6 @@ namespace ID.eShop.Services.Identity.API
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
         {
-
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -171,6 +207,11 @@ namespace ID.eShop.Services.Identity.API
             }
 
             app.UseStaticFiles();
+            //app.UseStaticFiles(new StaticFileOptions
+            //{
+            //    FileProvider = new PhysicalFileProvider(Path.Combine(env.WebRootPath, "file-storage")),
+            //    RequestPath = "/file-storage"
+            //});
 
             // Make work identity server redirections in Edge and lastest versions of browers. WARN: Not valid in a production environment.
             app.Use(async (context, next) =>

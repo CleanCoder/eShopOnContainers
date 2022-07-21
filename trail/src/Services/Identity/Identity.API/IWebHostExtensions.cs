@@ -16,9 +16,16 @@ namespace Microsoft.AspNetCore.Hosting
             return orchestratorType?.ToUpper() == "K8S";
         }
 
-        public static IWebHost MigrateDbContext<TContext>(this IWebHost webHost, Action<TContext, IServiceProvider> seeder) where TContext : DbContext
+        public static bool IsInMemoryDB(this IWebHost webHost)
+        {
+            var cfg = webHost.Services.GetService<IConfiguration>();
+            return cfg.GetValue<bool>("UseInMemoryDB");
+        }
+
+            public static IWebHost MigrateDbContext<TContext>(this IWebHost webHost, Action<TContext, IServiceProvider> seeder) where TContext : DbContext
         {
             var underK8s = webHost.IsInKubernetes();
+            var isInMemoryDB = webHost.IsInMemoryDB();
 
             using (var scope = webHost.Services.CreateScope())
             {
@@ -32,7 +39,7 @@ namespace Microsoft.AspNetCore.Hosting
 
                     if (underK8s)
                     {
-                        InvokeSeeder(seeder, context, services);
+                        InvokeSeeder(seeder, context, services, isInMemoryDB);
                     }
                     else
                     {
@@ -50,7 +57,7 @@ namespace Microsoft.AspNetCore.Hosting
                         //migration can't fail for network related exception. The retry options for DbContext only 
                         //apply to transient exceptions
                         // Note that this is NOT applied when running some orchestrators (let the orchestrator to recreate the failing service)
-                        retry.Execute(() => InvokeSeeder(seeder, context, services));
+                        retry.Execute(() => InvokeSeeder(seeder, context, services, isInMemoryDB));
                     }
 
                     logger.LogInformation("Migrated database associated with context {DbContextName}", typeof(TContext).Name);
@@ -68,10 +75,14 @@ namespace Microsoft.AspNetCore.Hosting
             return webHost;
         }
 
-        private static void InvokeSeeder<TContext>(Action<TContext, IServiceProvider> seeder, TContext context, IServiceProvider services)
+        private static void InvokeSeeder<TContext>(Action<TContext, IServiceProvider> seeder, TContext context, IServiceProvider services, bool isInMemoryDb)
             where TContext : DbContext
         {
-            context.Database.Migrate();
+            if (!isInMemoryDb)
+            {
+                context.Database.Migrate();
+            }
+
             seeder(context, services);
         }
     }

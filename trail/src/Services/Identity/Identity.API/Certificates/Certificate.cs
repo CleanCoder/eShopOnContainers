@@ -17,10 +17,10 @@ namespace ID.eShop.Services.Identity.API.Certificates
              *  real environment the certificate should be created and stored in a secure way, which is out
              *  of the scope of this project.
              **********************************************************************************************/
-            var certResource = assembly.GetManifestResourceNames().FirstOrDefault(name => name.Contains("idsrv3test.pfx"));
+            var certResource = assembly.GetManifestResourceNames().FirstOrDefault(name => name.Contains("idsrv.pfx"));
             using (var stream = assembly.GetManifestResourceStream(certResource))
             {
-                return new X509Certificate2(ReadStream(stream), "idsrv3test");
+                return new X509Certificate2(ReadStream(stream), "wJKh6ElW4DqMqHd7YRVj0W6r/prod");
             }
         }
 

@@ -1,19 +1,25 @@
+{{- if .Values.service }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.app.svc.identity }}
+  name: {{ .Values.app_name }}
+  namespace: {{ .Values.namespace }}
   labels:
-    app: {{ template "identity-api.name" . }}
-    chart: {{ template "identity-api.chart" . }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
+    {{- include "standard-chart.common.metadataLabels" $ | nindent 4 }}
 spec:
   type: {{ .Values.service.type }}
   ports:
     - port: {{ .Values.service.port }}
-      targetPort: http
+      targetPort:  {{ .Values.service.port }}
       protocol: TCP
       name: http
+    {{- if .Values.service.grpcPort }}
+    - port: {{ .Values.service.grpcPort }}
+      targetPort: {{ .Values.service.grpcPort }}
+      protocol: TCP
+      name: grpc
+    {{- end }}
   selector:
-    app: {{ template "identity-api.name" . }}
+    app: {{ .Values.app_name }}
     release: {{ .Release.Name }}
+{{- end }}

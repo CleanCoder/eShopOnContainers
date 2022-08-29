@@ -1,4 +1,5 @@
-﻿using ID.eShop.Services.Identity.API.Models;
+﻿using Domain.Models;
+using ID.eShop.Services.Identity.API.Models;
 using IdentityModel;
 using IdentityServer4.Models;
 using IdentityServer4.Services;

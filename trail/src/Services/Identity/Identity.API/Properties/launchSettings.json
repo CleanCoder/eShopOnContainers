@@ -13,14 +13,18 @@
             "launchBrowser": true,
             "launchUrl": "http://localhost:6000",
             "environmentVariables": {
-                "ASPNETCORE_ENVIRONMENT": "Development"
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "ASPNETCORE_URLS": "https://localhost:6001/;http://localhost:6000/",
+                "ASPNETCORE_HTTPS_PORT": 6001
             }
         },
         "Identity.API": {
             "commandName": "Project",
             "launchBrowser": true,
             "environmentVariables": {
-                "ASPNETCORE_ENVIRONMENT": "Development"
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "ASPNETCORE_URLS": "https://localhost:6001/;http://localhost:6000/",
+                "ASPNETCORE_HTTPS_PORT": 6001
             },
             "launchUrl": "http://localhost:6000"
         },

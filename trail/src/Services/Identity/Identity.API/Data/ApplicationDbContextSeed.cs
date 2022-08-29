@@ -1,4 +1,5 @@
-﻿using ID.eShop.Services.Identity.API.Models;
+﻿using Domain.Models;
+using ID.eShop.Services.Identity.API.Models;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
@@ -13,7 +14,6 @@ namespace ID.eShop.Services.Identity.API.Data
     public class ApplicationDbContextSeed
     {
         private readonly IPasswordHasher<ApplicationUser> _passwordHasher = new PasswordHasher<ApplicationUser>();
-
 
         public async Task SeedAsync(ApplicationDbContext context, IWebHostEnvironment env, 
             ILogger<ApplicationDbContextSeed> logger, IOptions<AppSettings> settings, int? retry = 0)
@@ -58,7 +58,8 @@ namespace ID.eShop.Services.Identity.API.Data
                 NormalizedUserName = "ABC@GMAIL.COM",
                 SecurityStamp = Guid.NewGuid().ToString("D"),
                 AccountStatus = AccountStatus.Active,
-                AccountType = AccountType.Admin
+                AccountType = AccountType.Admin,
+                EmailConfirmed = true
             };
 
             user.PasswordHash = _passwordHasher.HashPassword(user, "Pass@word1");

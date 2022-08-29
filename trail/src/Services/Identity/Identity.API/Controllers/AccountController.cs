@@ -3,6 +3,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
+using Domain.Models;
 using ID.eShop.API.Common.Services;
 using ID.eShop.Services.Identity.API.Models;
 using ID.eShop.Services.Identity.API.Services;

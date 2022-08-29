@@ -1,7 +1,10 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Text;
 
-namespace ID.eShop.Services.Identity.API.Models
+namespace Domain.Models
 {
     public class ApplicationUser : IdentityUser
     {

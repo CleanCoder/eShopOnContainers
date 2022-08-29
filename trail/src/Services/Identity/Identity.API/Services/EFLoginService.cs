@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Domain.Models;
 using ID.eShop.Services.Identity.API.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;

@@ -1,5 +1,7 @@
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
+using Domain.Models;
+using Domain.Services;
 using HealthChecks.UI.Client;
 using ID.eShop.API.Common;
 using ID.eShop.API.Common.Extensions;
@@ -12,11 +14,14 @@ using ID.eShop.Services.Identity.API.Models;
 using ID.eShop.Services.Identity.API.Services;
 using IdentityServer4.Configuration;
 using IdentityServer4.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -65,7 +70,7 @@ namespace ID.eShop.Services.Identity.API
                 services.AddDbContext<ApplicationDbContext>(options => options.UseInMemoryDatabase("eshop"));
             }
 
-            services.AddIdentity<ApplicationUser, IdentityRole>(opt =>
+            services.AddIdentity<ApplicationUser, ApplicationRole>(opt =>
             {
                 opt.Password.RequiredLength = 6;
                 opt.Password.RequireDigit = true;
@@ -165,6 +170,19 @@ namespace ID.eShop.Services.Identity.API
             })
             .Services.AddTransient<IProfileService, ProfileService>();
 
+            services.ConfigureApplicationCookie(options =>
+            {
+                // Cookie settings
+                options.Cookie.HttpOnly = true;
+                options.ExpireTimeSpan = TimeSpan.FromMinutes(5);
+
+                options.LoginPath = "/Account/Login";
+                options.AccessDeniedPath = "/Account/AccessDenied";
+                options.SlidingExpiration = true;
+            });
+           // services.AddJwtAuthentication(services.GetApplicationSettings(Configuration));
+                 //.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options => builder.Configuration.Bind("CookieSettings", options));.;
+
             //services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
             services.AddControllers();
             services.AddControllersWithViews();
@@ -174,10 +192,30 @@ namespace ID.eShop.Services.Identity.API
             services.AddSingleton(Configuration.GetSection("EmailConfiguration").Get<EmailConfiguration>());
             services.AddScoped<IEmailSender, DummyEmailSender>();  // TODO: Test only
             services.AddScoped<IVerificationCodeService, VerificationCodeService>();
+            services.AddCommonApplicationServices();
+            services.AddTransient<IRoleClaimService, RoleClaimService>();
+            services.AddHttpContextAccessor();
+            services.AddScoped<ICurrentUserService, CurrentUserService>();
 
+            services.AddAutoMapper(typeof(Startup));
+            services.AddApiVersioning(config =>
+            {
+                config.DefaultApiVersion = new ApiVersion(1, 0);
+                config.AssumeDefaultVersionWhenUnspecified = true;
+                config.ReportApiVersions = true;
+            });
 
             // HTTP Clients
             services.AddCustomHttpClient<IWeatherClient, WeatherClient>(Configuration.GetSectionAs<HttpClientSettings>("HttpClientSettings:BizApi"));
+
+
+            Microsoft.IdentityModel.Logging.IdentityModelEventSource.ShowPII = true;       // Caution! Do NOT use in production: https://aka.ms/IdentityModel/PII
+            services.AddAuthentication(options =>
+            {
+                options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+           .AddCookie(setup => setup.ExpireTimeSpan = TimeSpan.FromMinutes(120));
 
 
             var container = new ContainerBuilder();
@@ -207,11 +245,11 @@ namespace ID.eShop.Services.Identity.API
             }
 
             app.UseStaticFiles();
-            //app.UseStaticFiles(new StaticFileOptions
-            //{
-            //    FileProvider = new PhysicalFileProvider(Path.Combine(env.WebRootPath, "file-storage")),
-            //    RequestPath = "/file-storage"
-            //});
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), @"Files")),
+                RequestPath = new PathString("/Files")
+            });
 
             // Make work identity server redirections in Edge and lastest versions of browers. WARN: Not valid in a production environment.
             app.Use(async (context, next) =>
@@ -221,14 +259,18 @@ namespace ID.eShop.Services.Identity.API
             });
 
             app.UseForwardedHeaders();
+
             // Adds IdentityServer
             app.UseIdentityServer();
+          
 
             // Fix a problem with chrome. Chrome enabled a new feature "Cookies without SameSite must be secure", 
             // the coockies shold be expided from https, but in eShop, the internal comunicacion in aks and docker compose is http.
             // To avoid this problem, the policy of cookies shold be in Lax mode.
             app.UseCookiePolicy(new CookiePolicyOptions { MinimumSameSitePolicy = SameSiteMode.Lax });
             app.UseRouting();
+            app.UseAuthentication();
+            app.UseAuthorization();
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapDefaultControllerRoute();

@@ -6,3 +6,4 @@ metadata:
 
 data:
   ASPNETCORE_ENVIRONMENT: Production
+  UseInMemoryDB: 'true'

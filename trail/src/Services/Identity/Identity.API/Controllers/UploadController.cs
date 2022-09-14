@@ -12,7 +12,7 @@ namespace ID.eShop.Services.Identity.API.Controllers
     public class UploadController : Controller
     {
 
-        private const string MediaRootFoler = "file-storage";
+        private const string MediaRootFoler = "Files";
 
         private readonly IWebHostEnvironment _env;
         private readonly string _folder;
@@ -22,7 +22,7 @@ namespace ID.eShop.Services.Identity.API.Controllers
         {
             _env = env;
             _logger = logger;
-            _folder = Path.Combine(_env.WebRootPath, MediaRootFoler);
+            _folder = Path.Combine(_env.ContentRootPath, MediaRootFoler);
 
             if (!Directory.Exists(_folder))
             {

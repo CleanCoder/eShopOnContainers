@@ -13,5 +13,10 @@
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.14.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\Common\API.Common\API.Common.csproj" />
+    <ProjectReference Include="..\..\Common\Common.HangfireJobs\Common.HangfireJobs.csproj" />
+  </ItemGroup>
+
 
 </Project>

@@ -21,7 +21,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Biz", "Biz", "{F9AD948A-9A9
 EndProject
 Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{56D2AA73-C180-48B7-94E9-D35C30686342}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain", "Common\Domain\Domain.csproj", "{60C24F6B-158A-4994-93D4-67C50F8A7DE5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Domain", "Common\Domain\Domain.csproj", "{60C24F6B-158A-4994-93D4-67C50F8A7DE5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Common.HangfireJobs", "Common\Common.HangfireJobs\Common.HangfireJobs.csproj", "{868CBF90-AB38-45FD-8A90-CC745603171F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -49,6 +51,10 @@ Global
 		{60C24F6B-158A-4994-93D4-67C50F8A7DE5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{60C24F6B-158A-4994-93D4-67C50F8A7DE5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{60C24F6B-158A-4994-93D4-67C50F8A7DE5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{868CBF90-AB38-45FD-8A90-CC745603171F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{868CBF90-AB38-45FD-8A90-CC745603171F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{868CBF90-AB38-45FD-8A90-CC745603171F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{868CBF90-AB38-45FD-8A90-CC745603171F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -62,6 +68,7 @@ Global
 		{C4341038-9827-4572-BE30-5148BB239D6D} = {F9AD948A-9A9C-4C86-858A-9B4ADB59B1CE}
 		{F9AD948A-9A9C-4C86-858A-9B4ADB59B1CE} = {14EA3D91-5625-46D2-9AA6-6B7C004935D8}
 		{60C24F6B-158A-4994-93D4-67C50F8A7DE5} = {E47A55E1-DF17-4CA5-9334-9183F9E9DEE9}
+		{868CBF90-AB38-45FD-8A90-CC745603171F} = {E47A55E1-DF17-4CA5-9334-9183F9E9DEE9}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E1FE0C9D-4CC7-42E7-967C-42A55EE1FE15}

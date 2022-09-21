@@ -7,6 +7,7 @@
 
   <ItemGroup>
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="8.1.1" />
+    <PackageReference Include="Hangfire" Version="1.7.31" />
     <PackageReference Include="IdentityModel" Version="4.4.0" />
     <PackageReference Include="MailKit" Version="2.1.0.3" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication" Version="2.2.0" />
@@ -21,11 +22,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Util\" />
+    <ProjectReference Include="..\Domain\Domain.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Domain\Domain.csproj" />
+    <Folder Include="Filters\" />
   </ItemGroup>
 
 </Project>

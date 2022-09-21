@@ -1,4 +1,11 @@
+using Biz.API.Jobs;
+using Hangfire;
 using HealthChecks.UI.Client;
+using ID.eShop.API.Common.Services.BackgroundJobs;
+using ID.eShop.Common.HangfireJobs.Authorization;
+using ID.eShop.Common.HangfireJobs.Extensions;
+using ID.eShop.Common.HangfireJobs.Internal;
+using ID.eShop.Common.HangfireJobs.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
@@ -24,7 +31,7 @@ namespace Biz.API
         }
 
         public IConfiguration Configuration { get; }
-
+        
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
@@ -32,6 +39,11 @@ namespace Biz.API
 
             services.AddHealthChecks()
              .AddCheck("self", () => HealthCheckResult.Healthy());
+
+            services.Configure<HangfireConfigureOptions>(Configuration.GetSection("HangfireConfigureOptions"));
+            services.AddHanfire(x => x.UseSqlServerStorage(Configuration.GetConnectionString("JobsDatabase")), true);
+            services.AddTransient<NotificationJob>();
+            services.AddTransient<ScheduledPumpJob>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -53,6 +65,9 @@ namespace Biz.API
             app.UseRouting();
 
             app.UseAuthorization();
+            
+            app.UseHangfire();
+            app.InitializeHangfireJobs();
 
             app.UseEndpoints(endpoints =>
             {

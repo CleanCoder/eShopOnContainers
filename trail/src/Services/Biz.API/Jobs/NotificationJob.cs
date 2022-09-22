@@ -1,6 +1,7 @@
 ﻿using ID.eShop.API.Common.Services.BackgroundJobs;
 using ID.eShop.API.Common.Util;
 using System;
+using System.Threading.Tasks;
 
 namespace Biz.API.Jobs
 {
@@ -27,9 +28,11 @@ namespace Biz.API.Jobs
 
     public class NotificationJob : BackgroundJob<NotificationJobArgs>
     {
-        public override void Execute(NotificationJobArgs args)
+        public override async Task ExecuteAsync(NotificationJobArgs args)
         {
             Console.WriteLine(args.NotificationId);
+            await Task.Delay(100);
+            Console.WriteLine("  ---- " + args.NotificationId);
         }
     }
 }

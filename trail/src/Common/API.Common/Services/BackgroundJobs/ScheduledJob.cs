@@ -1,11 +1,10 @@
-﻿using Hangfire.Server;
-using Hangfire;
-using Microsoft.Extensions.Logging.Abstractions;
+﻿using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace ID.eShop.API.Common.Services.BackgroundJobs
 {
@@ -33,42 +32,7 @@ namespace ID.eShop.API.Common.Services.BackgroundJobs
             Logger = NullLogger<ScheduledJob>.Instance;
         }
 
-        /// <summary>
-        /// Executes the job.
-        /// </summary>
-        /// <param name="performContext">
-        /// The context in which the job is performed. Populated by Hangfire.
-        /// It is safe to pass <c>null</c> in unit tests or other manual scenarios.
-        /// </param>
-        /// <param name="cancellationToken">
-        /// The <see cref="IJobCancellationToken"/>. Populated by Hangfire.
-        /// It is safe to pass <c>null</c> in unit tests or other manual scenarios,
-        /// a new instance of <see cref="JobCancellationToken"/> will be created in that case.
-        /// </param>
-        public async Task ExecuteAsync(PerformContext performContext, IJobCancellationToken cancellationToken)
-        {
-            var jobId = performContext?.BackgroundJob?.Id;
-
-            cancellationToken?.ThrowIfCancellationRequested();
-
-            Logger.LogDebug($"Starting job {jobId}");
-            try
-            {
-                await ExecuteAsync(cancellationToken ?? new JobCancellationToken(false));
-                Logger.LogDebug($"Finished job {jobId}");
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, $"Failed executing job {jobId}/{GetType().Name}: {ex.Message}");
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// Executes the inner logic of the job.
-        /// </summary>
-        /// <param name="cancellationToken">The <see cref="IJobCancellationToken"/>.</param>
-        protected abstract Task ExecuteAsync(IJobCancellationToken cancellationToken);
+        public abstract Task ExecuteAsync(CancellationToken cancellationToken);
 
     }
 }

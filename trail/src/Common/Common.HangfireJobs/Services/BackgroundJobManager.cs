@@ -50,15 +50,15 @@ namespace ID.eShop.Common.HangfireJobs.Services
                 {
                     if (delay.HasValue)
                     {
-                        jobId = BackgroundJob.Schedule(() => job.Execute(args), delay.Value);
+                        jobId = BackgroundJob.Schedule(() => job.ExecuteAsync(args), delay.Value);
                     }
                     else if (enqueueAt.HasValue)
                     {
-                        jobId = BackgroundJob.Schedule(() => job.Execute(args), enqueueAt.Value);
+                        jobId = BackgroundJob.Schedule(() => job.ExecuteAsync(args), enqueueAt.Value);
                     }
                     else
                     {
-                        jobId = BackgroundJob.Enqueue(() => job.Execute(args));
+                        jobId = BackgroundJob.Enqueue(() => job.ExecuteAsync(args));
                     }
                 }
                 catch (Exception ex)

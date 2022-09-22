@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace ID.eShop.API.Common.Services.BackgroundJobs
 {
@@ -13,6 +14,6 @@ namespace ID.eShop.API.Common.Services.BackgroundJobs
         /// Executes the job with the <see cref="args"/>.
         /// </summary>
         /// <param name="args">Job arguments.</param>
-        void Execute(TArgs args);
+        Task ExecuteAsync(TArgs args);
     }
 }

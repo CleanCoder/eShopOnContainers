@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Text;
 using System.Linq;
 using ID.eShop.Common.HangfireJobs.Internal;
+using System.Threading;
 
 namespace Hangfire
 {
@@ -53,7 +54,7 @@ namespace Hangfire
                             if (!string.IsNullOrEmpty(job.Schedule))
                             {
                                 var recurringJobManager = sp.GetService<IRecurringJobManager>();
-                                recurringJobManager.AddOrUpdate(jobType.Name, new Job(jobType, _executeMethod, null, null), job.Schedule);
+                                recurringJobManager.AddOrUpdate(jobType.Name, new Job(jobType, _executeMethod, CancellationToken.None), job.Schedule);
                             }
                         }
                         catch (Exception ex)

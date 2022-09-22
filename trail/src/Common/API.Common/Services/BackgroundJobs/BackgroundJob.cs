@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace ID.eShop.API.Common.Services.BackgroundJobs
 {
@@ -15,6 +16,6 @@ namespace ID.eShop.API.Common.Services.BackgroundJobs
             Logger = NullLogger<BackgroundJob<TArgs>>.Instance;
         }
 
-        public abstract void Execute(TArgs args);
+        public abstract Task ExecuteAsync(TArgs args);
     }
 }
